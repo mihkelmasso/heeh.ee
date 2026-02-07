@@ -19,7 +19,7 @@
       width: 65vw;
       max-height: 80vh;
       object-fit: contain;
-      transition: transform 0.12s ease-out;
+      transition: transform 0.14s ease-out;
       cursor: pointer;
     }
 
@@ -49,35 +49,46 @@
     const gif = document.getElementById("dance");
     const hint = document.querySelector(".hint");
 
-    // Billie Jean BPM
+    // === AUDIO / BPM ===
     const BPM = 117;
     const beatInterval = 60000 / BPM;
 
-    // SCALE SETTINGS
+    // === SCALE LOGIC ===
     const minScale = 1.0;
     const maxScale = 1.35;
-    const steps = 6; // mitu biiti üles / alla
+    const crescendoSteps = 6;
 
-    let currentStep = 0;
-    let direction = 1; // 1 = kasvab, -1 = kahaneb
     let scale = minScale;
+    let step = 0;
+    let direction = 1;
+    let beatCount = 0;
 
-    // BEAT LOOP
     setInterval(() => {
-      const stepSize = (maxScale - minScale) / steps;
+      beatCount++;
 
+      // STEP SCALE UP / DOWN
+      const stepSize = (maxScale - minScale) / crescendoSteps;
       scale += stepSize * direction;
-      currentStep++;
+      step++;
 
-      if (currentStep >= steps) {
-        direction *= -1;     // vaheta suunda
-        currentStep = 0;
+      if (step >= crescendoSteps) {
+        direction *= -1;
+        step = 0;
       }
 
-      gif.style.transform = `scale(${scale})`;
+      // === MEGAZOOM EVERY 9TH BEAT ===
+      if (beatCount % 9 === 0) {
+        gif.style.transform = "scale(1.7)";
+        setTimeout(() => {
+          gif.style.transform = `scale(${scale})`;
+        }, 140);
+      } else {
+        gif.style.transform = `scale(${scale})`;
+      }
+
     }, beatInterval);
 
-    // SOUND ENABLE (any interaction)
+    // === ENABLE SOUND ON ANY INTERACTION ===
     let soundEnabled = false;
 
     function enableSound() {
@@ -91,11 +102,11 @@
       const fadeDuration = 2000;
       const stepTime = 50;
       const steps = fadeDuration / stepTime;
-      let step = 0;
+      let s = 0;
 
       const fade = setInterval(() => {
-        step++;
-        music.volume = Math.min(step / steps, 1);
+        s++;
+        music.volume = Math.min(s / steps, 1);
         if (music.volume >= 1) clearInterval(fade);
       }, stepTime);
 
