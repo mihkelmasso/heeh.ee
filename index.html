@@ -40,8 +40,7 @@
   <img id="dance" src="hehe-dance.gif" alt="dance">
   <div class="hint">🔊 sound on interaction</div>
 
-  <!-- autoplay muted = allowed -->
-  <audio id="music" autoplay loop muted>
+  <audio id="music" loop muted>
     <source src="billijean.mp3" type="audio/mpeg">
   </audio>
 
@@ -54,7 +53,7 @@
     const BPM = 117;
     const beatInterval = 60000 / BPM;
 
-    // Beat sync starts immediately
+    // Beat sync (visual only)
     setInterval(() => {
       gif.style.transform = "scale(1.06)";
       setTimeout(() => {
@@ -67,6 +66,9 @@
     function enableSound() {
       if (soundEnabled) return;
       soundEnabled = true;
+
+      // THIS IS THE MISSING PIECE
+      music.play().catch(() => {});
 
       music.muted = false;
       music.volume = 0;
@@ -84,22 +86,18 @@
 
       if (hint) hint.remove();
 
-      // Remove all listeners after first success
-      window.removeEventListener("click", enableSound);
-      window.removeEventListener("mousemove", enableSound);
-      window.removeEventListener("scroll", enableSound);
-      window.removeEventListener("keydown", enableSound);
-      window.removeEventListener("touchstart", enableSound);
+      // remove listeners
+      ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
+        window.removeEventListener(e, enableSound)
+      );
     }
 
     // ANY interaction enables sound
-    window.addEventListener("click", enableSound);
-    window.addEventListener("mousemove", enableSound);
-    window.addEventListener("scroll", enableSound);
-    window.addEventListener("keydown", enableSound);
-    window.addEventListener("touchstart", enableSound);
+    ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
+      window.addEventListener(e, enableSound)
+    );
 
-    // Explicitly also on GIF click (belt & suspenders)
+    // Explicit GIF click (extra-safe)
     gif.addEventListener("click", enableSound);
   </script>
 </body>
