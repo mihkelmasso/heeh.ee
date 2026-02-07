@@ -16,10 +16,10 @@
       position: fixed;
       left: 0;
       bottom: 0;
-      width: 70vw;
+      width: 65vw;
       max-height: 80vh;
       object-fit: contain;
-      transition: transform 0.08s ease-out;
+      transition: transform 0.12s ease-out;
       cursor: pointer;
     }
 
@@ -53,29 +53,44 @@
     const BPM = 117;
     const beatInterval = 60000 / BPM;
 
-    // Beat sync (visual only)
+    // SCALE SETTINGS
+    const minScale = 1.0;
+    const maxScale = 1.35;
+    const steps = 6; // mitu biiti üles / alla
+
+    let currentStep = 0;
+    let direction = 1; // 1 = kasvab, -1 = kahaneb
+    let scale = minScale;
+
+    // BEAT LOOP
     setInterval(() => {
-      gif.style.transform = "scale(1.06)";
-      setTimeout(() => {
-        gif.style.transform = "scale(1)";
-      }, 80);
+      const stepSize = (maxScale - minScale) / steps;
+
+      scale += stepSize * direction;
+      currentStep++;
+
+      if (currentStep >= steps) {
+        direction *= -1;     // vaheta suunda
+        currentStep = 0;
+      }
+
+      gif.style.transform = `scale(${scale})`;
     }, beatInterval);
 
+    // SOUND ENABLE (any interaction)
     let soundEnabled = false;
 
     function enableSound() {
       if (soundEnabled) return;
       soundEnabled = true;
 
-      // THIS IS THE MISSING PIECE
       music.play().catch(() => {});
-
       music.muted = false;
       music.volume = 0;
 
-      const duration = 2000;
+      const fadeDuration = 2000;
       const stepTime = 50;
-      const steps = duration / stepTime;
+      const steps = fadeDuration / stepTime;
       let step = 0;
 
       const fade = setInterval(() => {
@@ -86,18 +101,15 @@
 
       if (hint) hint.remove();
 
-      // remove listeners
       ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
         window.removeEventListener(e, enableSound)
       );
     }
 
-    // ANY interaction enables sound
     ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
       window.addEventListener(e, enableSound)
     );
 
-    // Explicit GIF click (extra-safe)
     gif.addEventListener("click", enableSound);
   </script>
 </body>
