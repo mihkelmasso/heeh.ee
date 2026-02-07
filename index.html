@@ -32,4 +32,36 @@
 </head>
 
 <body>
-  <img src="hehe-dan
+  <img src="hehe-dance.gif" alt="dance">
+  <div class="hint">kliki ükskõik kuhu 🎵</div>
+
+  <audio id="music" loop>
+    <source src="smooth-criminal.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const music = document.getElementById("music");
+    const hint = document.querySelector(".hint");
+
+    function fadeIn(audio, duration = 2500) {
+      audio.volume = 0;
+      audio.play();
+
+      const stepTime = 50;
+      const steps = duration / stepTime;
+      let step = 0;
+
+      const fade = setInterval(() => {
+        step++;
+        audio.volume = Math.min(step / steps, 1);
+        if (audio.volume >= 1) clearInterval(fade);
+      }, stepTime);
+    }
+
+    document.addEventListener("click", () => {
+      fadeIn(music);
+      if (hint) hint.remove();
+    }, { once: true });
+  </script>
+</body>
+</html>
