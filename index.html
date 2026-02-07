@@ -33,20 +33,33 @@
 
 <body>
   <img src="hehe-dance.gif" alt="dance">
-
   <div class="hint">kliki ükskõik kuhu 🎵</div>
 
   <audio id="music" loop>
     <source src="Micheal_Jackson_-_Smooth_Criminal_THIS_IS_IT_(mp3.pm).mp3" type="audio/mpeg">
-    Sinu brauser ei toeta audio elementi.
   </audio>
 
   <script>
-    document.addEventListener("click", () => {
-      const music = document.getElementById("music");
-      music.play();
+    const music = document.getElementById("music");
+    const hint = document.querySelector(".hint");
 
-      const hint = document.querySelector(".hint");
+    function fadeIn(audio, duration = 3000) {
+      audio.volume = 0;
+      audio.play();
+
+      const stepTime = 50;
+      const steps = duration / stepTime;
+      let step = 0;
+
+      const fade = setInterval(() => {
+        step++;
+        audio.volume = Math.min(step / steps, 1);
+        if (audio.volume >= 1) clearInterval(fade);
+      }, stepTime);
+    }
+
+    document.addEventListener("click", () => {
+      fadeIn(music, 3000);
       if (hint) hint.remove();
     }, { once: true });
   </script>
