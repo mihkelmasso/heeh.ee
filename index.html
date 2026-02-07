@@ -9,35 +9,38 @@
       margin: 0;
       height: 100vh;
       background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       overflow: hidden;
     }
 
-    img {
-      width: 95vw;
-      height: 95vh;
+    #dance {
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      width: 70vw;
+      height: auto;
+      max-height: 80vh;
       object-fit: contain;
       transition: transform 0.08s ease-out;
+      pointer-events: none;
     }
 
     .hint {
-      position: absolute;
-      bottom: 20px;
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
       color: white;
       opacity: 0.6;
       font-family: Arial, sans-serif;
-      font-size: 13px;
+      font-size: 12px;
     }
   </style>
 </head>
 
 <body>
   <img id="dance" src="hehe-dance.gif" alt="dance">
+
   <div class="hint">🔊 sound on first interaction</div>
 
-  <!-- AUTOPLAY, MUTED -->
   <audio id="music" autoplay loop muted>
     <source src="billijean.mp3" type="audio/mpeg">
   </audio>
@@ -51,7 +54,7 @@
     const BPM = 117;
     const beatInterval = 60000 / BPM;
 
-    // BEAT SYNC STARTS IMMEDIATELY
+    // Beat sync starts immediately
     setInterval(() => {
       gif.style.transform = "scale(1.06)";
       setTimeout(() => {
@@ -59,5 +62,33 @@
       }, 80);
     }, beatInterval);
 
-    // FADE-IN UNMUTE ON *ANY* USER INTERACTION
-    function enabl
+    function enableSound() {
+      music.muted = false;
+      music.volume = 0;
+
+      const duration = 2000;
+      const stepTime = 50;
+      const steps = duration / stepTime;
+      let step = 0;
+
+      const fade = setInterval(() => {
+        step++;
+        music.volume = Math.min(step / steps, 1);
+        if (music.volume >= 1) clearInterval(fade);
+      }, stepTime);
+
+      if (hint) hint.remove();
+
+      window.removeEventListener("mousemove", enableSound);
+      window.removeEventListener("scroll", enableSound);
+      window.removeEventListener("keydown", enableSound);
+      window.removeEventListener("touchstart", enableSound);
+    }
+
+    window.addEventListener("mousemove", enableSound, { once: true });
+    window.addEventListener("scroll", enableSound, { once: true });
+    window.addEventListener("keydown", enableSound, { once: true });
+    window.addEventListener("touchstart", enableSound, { once: true });
+  </script>
+</body>
+</html>
