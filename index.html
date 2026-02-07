@@ -17,11 +17,10 @@
       left: 0;
       bottom: 0;
       width: 70vw;
-      height: auto;
       max-height: 80vh;
       object-fit: contain;
       transition: transform 0.08s ease-out;
-      pointer-events: none;
+      cursor: pointer;
     }
 
     .hint {
@@ -32,15 +31,16 @@
       opacity: 0.6;
       font-family: Arial, sans-serif;
       font-size: 12px;
+      pointer-events: none;
     }
   </style>
 </head>
 
 <body>
   <img id="dance" src="hehe-dance.gif" alt="dance">
+  <div class="hint">🔊 sound on interaction</div>
 
-  <div class="hint">🔊 sound on first interaction</div>
-
+  <!-- autoplay muted = allowed -->
   <audio id="music" autoplay loop muted>
     <source src="billijean.mp3" type="audio/mpeg">
   </audio>
@@ -62,7 +62,12 @@
       }, 80);
     }, beatInterval);
 
+    let soundEnabled = false;
+
     function enableSound() {
+      if (soundEnabled) return;
+      soundEnabled = true;
+
       music.muted = false;
       music.volume = 0;
 
@@ -79,16 +84,23 @@
 
       if (hint) hint.remove();
 
+      // Remove all listeners after first success
+      window.removeEventListener("click", enableSound);
       window.removeEventListener("mousemove", enableSound);
       window.removeEventListener("scroll", enableSound);
       window.removeEventListener("keydown", enableSound);
       window.removeEventListener("touchstart", enableSound);
     }
 
-    window.addEventListener("mousemove", enableSound, { once: true });
-    window.addEventListener("scroll", enableSound, { once: true });
-    window.addEventListener("keydown", enableSound, { once: true });
-    window.addEventListener("touchstart", enableSound, { once: true });
+    // ANY interaction enables sound
+    window.addEventListener("click", enableSound);
+    window.addEventListener("mousemove", enableSound);
+    window.addEventListener("scroll", enableSound);
+    window.addEventListener("keydown", enableSound);
+    window.addEventListener("touchstart", enableSound);
+
+    // Explicitly also on GIF click (belt & suspenders)
+    gif.addEventListener("click", enableSound);
   </script>
 </body>
 </html>
