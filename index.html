@@ -3,22 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <title>heeh.ee</title>
+
   <style>
     body {
       margin: 0;
       height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       background: black;
+      cursor: pointer;
     }
+
     img {
       max-width: 100%;
-      max-height: 100%;
+      max-height: 80vh;
+    }
+
+    .hint {
+      color: white;
+      font-family: Arial, sans-serif;
+      margin-top: 12px;
+      opacity: 0.7;
+      font-size: 14px;
     }
   </style>
 </head>
+
 <body>
   <img src="hehe-dance.gif" alt="dance">
+
+  <div class="hint">kliki ükskõik kuhu 🎵</div>
+
+  <audio id="music" loop>
+    <source src="smooth-criminal.mp3" type="audio/mpeg">
+    Sinu brauser ei toeta audio elementi.
+  </audio>
+
+  <script>
+    document.addEventListener("click", () => {
+      const music = document.getElementById("music");
+      music.play();
+
+      const hint = document.querySelector(".hint");
+      if (hint) hint.remove();
+    }, { once: true });
+  </script>
 </body>
 </html>
