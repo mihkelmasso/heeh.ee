@@ -8,60 +8,56 @@
     body {
       margin: 0;
       height: 100vh;
+      background: black;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      background: black;
-      cursor: pointer;
+      overflow: hidden;
     }
 
     img {
-      max-width: 100%;
-      max-height: 80vh;
+      width: 95vw;
+      height: 95vh;
+      object-fit: contain;
+      transition: transform 0.08s ease-out;
     }
 
     .hint {
+      position: absolute;
+      bottom: 20px;
       color: white;
+      opacity: 0.6;
       font-family: Arial, sans-serif;
-      margin-top: 12px;
-      opacity: 0.7;
-      font-size: 14px;
+      font-size: 13px;
     }
   </style>
 </head>
 
 <body>
-  <img src="hehe-dance.gif" alt="dance">
-  <div class="hint">kliki ükskõik kuhu 🎵</div>
+  <img id="dance" src="hehe-dance.gif" alt="dance">
+  <div class="hint">🔊 sound on first interaction</div>
 
-  <audio id="music" loop>
-    <source src="smooth-criminal.mp3" type="audio/mpeg">
+  <!-- AUTOPLAY, MUTED -->
+  <audio id="music" autoplay loop muted>
+    <source src="billijean.mp3" type="audio/mpeg">
   </audio>
 
   <script>
     const music = document.getElementById("music");
+    const gif = document.getElementById("dance");
     const hint = document.querySelector(".hint");
 
-    function fadeIn(audio, duration = 2500) {
-      audio.volume = 0;
-      audio.play();
+    // Billie Jean BPM
+    const BPM = 117;
+    const beatInterval = 60000 / BPM;
 
-      const stepTime = 50;
-      const steps = duration / stepTime;
-      let step = 0;
+    // BEAT SYNC STARTS IMMEDIATELY
+    setInterval(() => {
+      gif.style.transform = "scale(1.06)";
+      setTimeout(() => {
+        gif.style.transform = "scale(1)";
+      }, 80);
+    }, beatInterval);
 
-      const fade = setInterval(() => {
-        step++;
-        audio.volume = Math.min(step / steps, 1);
-        if (audio.volume >= 1) clearInterval(fade);
-      }, stepTime);
-    }
-
-    document.addEventListener("click", () => {
-      fadeIn(music);
-      if (hint) hint.remove();
-    }, { once: true });
-  </script>
-</body>
-</html>
+    // FADE-IN UNMUTE ON *ANY* USER INTERACTION
+    function enabl
