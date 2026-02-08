@@ -1,128 +1,68 @@
 <!DOCTYPE html>
 <html lang="et">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>heeh.ee</title>
-
   <style>
-    body {
+    html, body {
       margin: 0;
-      height: 100vh;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       background: black;
       overflow: hidden;
-    }
-
-    #dance {
-      position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 65vw;
-      max-height: 80vh;
-      object-fit: contain;
-      transition: transform 0.14s ease-out;
       cursor: pointer;
     }
 
-    .hint {
+    #gif {
       position: fixed;
-      right: 12px;
-      bottom: 12px;
-      color: white;
-      opacity: 0.6;
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      pointer-events: none;
+      bottom: 20px;
+      left: 20px;
+      width: 300px;
+      transition: transform 0.15s ease;
     }
   </style>
 </head>
-
 <body>
-  <img id="dance" src="hehe-dance.gif" alt="dance">
-  <div class="hint">🔊 sound on interaction</div>
 
-  <audio id="music" loop muted>
-    <source src="billijean.mp3" type="audio/mpeg">
-  </audio>
+  <img id="gif" src="hehe-dance.gif" alt="dance">
+
+  <audio id="audio" src="billijean.mp3" loop></audio>
 
   <script>
-    const music = document.getElementById("music");
-    const gif = document.getElementById("dance");
-    const hint = document.querySelector(".hint");
+    const audio = document.getElementById("audio");
+    const gif = document.getElementById("gif");
+    let started = false;
 
-    // === AUDIO / BPM ===
-    const BPM = 117;
-    const beatInterval = 60000 / BPM;
+    function startAudio() {
+      if (started) return;
+      started = true;
 
-    // === SCALE LOGIC ===
-    const minScale = 1.0;
-    const maxScale = 1.35;
-    const crescendoSteps = 6;
+      audio.volume = 0;
+      audio.play();
 
-    let scale = minScale;
-    let step = 0;
-    let direction = 1;
-    let beatCount = 0;
-
-    setInterval(() => {
-      beatCount++;
-
-      // STEP SCALE UP / DOWN
-      const stepSize = (maxScale - minScale) / crescendoSteps;
-      scale += stepSize * direction;
-      step++;
-
-      if (step >= crescendoSteps) {
-        direction *= -1;
-        step = 0;
-      }
-
-      // === MEGAZOOM EVERY 9TH BEAT ===
-      if (beatCount % 9 === 0) {
-        gif.style.transform = "scale(1.7)";
-        setTimeout(() => {
-          gif.style.transform = `scale(${scale})`;
-        }, 140);
-      } else {
-        gif.style.transform = `scale(${scale})`;
-      }
-
-    }, beatInterval);
-
-    // === ENABLE SOUND ON ANY INTERACTION ===
-    let soundEnabled = false;
-
-    function enableSound() {
-      if (soundEnabled) return;
-      soundEnabled = true;
-
-      music.play().catch(() => {});
-      music.muted = false;
-      music.volume = 0;
-
-      const fadeDuration = 2000;
-      const stepTime = 50;
-      const steps = fadeDuration / stepTime;
-      let s = 0;
-
+      // fade-in
+      let v = 0;
       const fade = setInterval(() => {
-        s++;
-        music.volume = Math.min(s / steps, 1);
-        if (music.volume >= 1) clearInterval(fade);
-      }, stepTime);
-
-      if (hint) hint.remove();
-
-      ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
-        window.removeEventListener(e, enableSound)
-      );
+        v += 0.02;
+        audio.volume = Math.min(v, 1);
+        if (v >= 1) clearInterval(fade);
+      }, 100);
     }
 
-    ["click","mousemove","scroll","keydown","touchstart"].forEach(e =>
-      window.addEventListener(e, enableSound)
-    );
+    // KÄIVITAB HELI:
+    document.addEventListener("click", startAudio, { once: true });
+    document.addEventListener("mousemove", startAudio, { once: true });
+    document.addEventListener("touchstart", startAudio, { once: true });
 
-    gif.addEventListener("click", enableSound);
+    // lihtne beat-zoom (umbes)
+    setInterval(() => {
+      gif.style.transform = "scale(1.15)";
+      setTimeout(() => {
+        gif.style.transform = "scale(1)";
+      }, 120);
+    }, 500);
   </script>
+
 </body>
 </html>
-<!-- redeploy -->
