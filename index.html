@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="et">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>heeh.ee</title>
   <style>
     html, body {
@@ -36,44 +36,44 @@
 <body>
 
 <div id="hint">CLICK ANYWHERE</div>
-<img id="gif" src="hehe-dance.gif" alt="dance">
-
-<audio id="audio" src="billijean.mp3" loop></audio>
+<img id="gif" src="hehe-dance.gif">
 
 <script>
-  const audio = document.getElementById("audio");
-  const gif = document.getElementById("gif");
-  const hint = document.getElementById("hint");
-
   let started = false;
-  let ctx;
+  let audio;
 
-  async function start() {
+  function start() {
     if (started) return;
     started = true;
 
-    hint.remove();
+    document.getElementById("hint").remove();
 
-    // 👇 SEE ON VÕTI
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    await ctx.resume();
-
+    // 👇 LOOME AUDIO ALLES NÜÜD
+    audio = new Audio("billijean.mp3");
     audio.volume = 0;
-    await audio.play();
 
-    // fade in
-    let v = 0;
-    const fade = setInterval(() => {
-      v += 0.03;
-      audio.volume = Math.min(v, 1);
-      if (v >= 1) clearInterval(fade);
-    }, 100);
+    audio.play().then(() => {
+      audio.loop = true;
+
+      // fade in
+      let v = 0;
+      const fade = setInterval(() => {
+        v += 0.03;
+        audio.volume = Math.min(v, 1);
+        if (v >= 1) clearInterval(fade);
+      }, 100);
+    }).catch(err => {
+      console.error("PLAY ERROR:", err);
+    });
   }
 
   document.addEventListener("click", start, { once: true });
+  document.addEventListener("mousedown", start, { once: true });
+  document.addEventListener("keydown", start, { once: true });
   document.addEventListener("touchstart", start, { once: true });
 
-  // lihtne beat pulse
+  // beat pulse
+  const gif = document.getElementById("gif");
   setInterval(() => {
     gif.style.transform = "scale(1.15)";
     setTimeout(() => gif.style.transform = "scale(1)", 100);
