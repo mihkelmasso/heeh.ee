@@ -13,21 +13,27 @@ html, body {
   overflow: hidden;
 }
 
-/* nähtamatu audio unlock */
+/* nähtamatu unlock */
 #unlock {
   position: fixed;
   inset: 0;
   z-index: 9999;
 }
 
-/* gif */
+/* visuaali konteiner (kaamera) */
+#stage {
+  position: fixed;
+  inset: 0;
+  will-change: transform, filter;
+}
+
+/* GIF */
 #gif {
   position: fixed;
   bottom: 20px;
   left: 20px;
   width: 120px;
   transform-origin: bottom left;
-  transform: scale(0.15);
   transition: transform 0.06s linear;
 }
 </style>
@@ -36,7 +42,9 @@ html, body {
 <body>
 
 <div id="unlock"></div>
-<img id="gif" src="hehe-dance.gif">
+<div id="stage">
+  <img id="gif" src="hehe-dance.gif" alt="dance">
+</div>
 
 <script>
 /* =====================
@@ -45,17 +53,21 @@ html, body {
 let audio, ctx, analyser, data;
 let started = false;
 
-let energyHistory = [];
-let bassHistory = [];
+let energyHist = [];
+let bassHist = [];
 
 let inChorus = false;
 let chorusStart = 0;
+let chorusCount = 0;
+
+let shake = 0;
 
 /* =====================
    ELEMENTS
 ===================== */
-const gif = document.getElementById("gif");
 const unlock = document.getElementById("unlock");
+const stage = document.getElementById("stage");
+const gif = document.getElementById("gif");
 
 /* =====================
    START (AINUS LUBATUD)
@@ -72,8 +84,8 @@ unlock.addEventListener("pointerdown", () => {
   analyser = ctx.createAnalyser();
   analyser.fftSize = 512;
 
-  const source = ctx.createMediaElementSource(audio);
-  source.connect(analyser);
+  const src = ctx.createMediaElementSource(audio);
+  src.connect(analyser);
   analyser.connect(ctx.destination);
 
   data = new Uint8Array(analyser.frequencyBinCount);
@@ -83,54 +95,73 @@ unlock.addEventListener("pointerdown", () => {
 });
 
 /* =====================
-   ANALYSIS LOOP
+   LOOP
 ===================== */
 function loop() {
   analyser.getByteFrequencyData(data);
 
-  /* ----- BASS & ENERGY ----- */
+  /* --- bass & energy --- */
   let bass = 0;
-  for (let i = 0; i < 15; i++) bass += data[i];
-  bass /= 15;
+  for (let i = 0; i < 16; i++) bass += data[i];
+  bass /= 16;
 
-  let energy = data.reduce((a,b) => a + b, 0) / data.length;
+  let energy = 0;
+  for (let i = 0; i < data.length; i++) energy += data[i];
+  energy /= data.length;
 
-  bassHistory.push(bass);
-  energyHistory.push(energy);
+  bassHist.push(bass);
+  energyHist.push(energy);
+  if (bassHist.length > 120) bassHist.shift();
+  if (energyHist.length > 120) energyHist.shift();
 
-  if (bassHistory.length > 120) bassHistory.shift();
-  if (energyHistory.length > 120) energyHistory.shift();
+  const avgBass = bassHist.reduce((a,b)=>a+b,0)/bassHist.length;
+  const avgEnergy = energyHist.reduce((a,b)=>a+b,0)/energyHist.length;
 
-  const avgBass =
-    bassHistory.reduce((a,b) => a+b, 0) / bassHistory.length;
-
-  const avgEnergy =
-    energyHistory.reduce((a,b) => a+b, 0) / energyHistory.length;
-
-  /* ----- CHORUS DETECTION ----- */
-  const bassBoost = bass > avgBass * 1.6;
-  const energyBoost = energy > avgEnergy * 1.4;
+  /* --- CHORUS DETECTION --- */
+  const bassBoost = bass > avgBass * 1.7;
+  const energyBoost = energy > avgEnergy * 1.45;
 
   if (!inChorus && bassBoost && energyBoost) {
     inChorus = true;
     chorusStart = performance.now();
+    chorusCount++;
   }
 
-  // chorus kestab vähemalt 6s
+  // chorus kestab min 6s, lõpeb kui bass kukub
   if (inChorus && performance.now() - chorusStart > 6000) {
     if (!bassBoost) inChorus = false;
   }
 
-  /* ----- VISUAL RESPONSE ----- */
+  /* --- VISUALS --- */
   let scale;
+  let filter = "none";
 
   if (inChorus) {
-    // 🔥 CHORUS MODE
-    scale = 2.2 + (bass / 255) * 4;
+    // iga chorus agressiivsem
+    const aggression = Math.min(1.5, chorusCount * 0.35);
+
+    // fullscreen overshoot
+    scale = 2.8 + aggression * 3 + (bass / 255) * 2;
+
+    // strobe / invert bass hitil
+    if (bass > avgBass * 2.2) {
+      filter = "invert(1)";
+      shake = 18 * aggression;
+    }
   } else {
     // normaalne pulse
-    scale = 0.4 + (energy / 255) * 1.8;
+    scale = 0.35 + (energy / 255) * 1.6;
   }
+
+  /* --- CAMERA SHAKE --- */
+  const sx = (Math.random() - 0.5) * shake;
+  const sy = (Math.random() - 0.5) * shake;
+  shake *= 0.85;
+
+  stage.style.transform =
+    `translate(${sx}px, ${sy}px)`;
+
+  stage.style.filter = filter;
 
   gif.style.transform = `scale(${scale})`;
 
