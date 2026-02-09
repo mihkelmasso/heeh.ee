@@ -28,7 +28,7 @@ html, body {
   width: 120px;
   transform-origin: bottom left;
   transform: scale(0.15);
-  transition: transform 0.08s linear;
+  transition: transform 0.06s linear;
 }
 </style>
 </head>
@@ -44,8 +44,12 @@ html, body {
 ===================== */
 let audio, ctx, analyser, data;
 let started = false;
+
 let energyHistory = [];
-let lastMega = 0;
+let bassHistory = [];
+
+let inChorus = false;
+let chorusStart = 0;
 
 /* =====================
    ELEMENTS
@@ -66,7 +70,7 @@ unlock.addEventListener("pointerdown", () => {
 
   ctx = new AudioContext();
   analyser = ctx.createAnalyser();
-  analyser.fftSize = 256;
+  analyser.fftSize = 512;
 
   const source = ctx.createMediaElementSource(audio);
   source.connect(analyser);
@@ -84,31 +88,48 @@ unlock.addEventListener("pointerdown", () => {
 function loop() {
   analyser.getByteFrequencyData(data);
 
-  // bass = alumised sagedused
+  /* ----- BASS & ENERGY ----- */
   let bass = 0;
-  for (let i = 0; i < 10; i++) bass += data[i];
-  bass /= 10;
+  for (let i = 0; i < 15; i++) bass += data[i];
+  bass /= 15;
 
-  // üldenergia
-  let energy = data.reduce((a,b) => a+b, 0) / data.length;
+  let energy = data.reduce((a,b) => a + b, 0) / data.length;
 
+  bassHistory.push(bass);
   energyHistory.push(energy);
-  if (energyHistory.length > 60) energyHistory.shift();
+
+  if (bassHistory.length > 120) bassHistory.shift();
+  if (energyHistory.length > 120) energyHistory.shift();
+
+  const avgBass =
+    bassHistory.reduce((a,b) => a+b, 0) / bassHistory.length;
 
   const avgEnergy =
     energyHistory.reduce((a,b) => a+b, 0) / energyHistory.length;
 
-  // pingelisus = bass + keskmine energia
-  const tension = Math.min(1, (bass + energy) / 300);
+  /* ----- CHORUS DETECTION ----- */
+  const bassBoost = bass > avgBass * 1.6;
+  const energyBoost = energy > avgEnergy * 1.4;
 
-  // normaalne pulse
-  let scale = 0.3 + tension * 2.2;
+  if (!inChorus && bassBoost && energyBoost) {
+    inChorus = true;
+    chorusStart = performance.now();
+  }
 
-  // 💥 MEGAZOOM kui bass spike
-  const now = performance.now();
-  if (bass > avgEnergy * 1.8 && now - lastMega > 1200) {
-    scale = 6;
-    lastMega = now;
+  // chorus kestab vähemalt 6s
+  if (inChorus && performance.now() - chorusStart > 6000) {
+    if (!bassBoost) inChorus = false;
+  }
+
+  /* ----- VISUAL RESPONSE ----- */
+  let scale;
+
+  if (inChorus) {
+    // 🔥 CHORUS MODE
+    scale = 2.2 + (bass / 255) * 4;
+  } else {
+    // normaalne pulse
+    scale = 0.4 + (energy / 255) * 1.8;
   }
 
   gif.style.transform = `scale(${scale})`;
