@@ -7,29 +7,30 @@
 <style>
 html, body {
   margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
   background: black;
   overflow: hidden;
 }
 
-/* GIF */
+/* nähtamatu unlock kiht */
+#unlock {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+/* gif */
 #gif {
   position: fixed;
   bottom: 20px;
   left: 20px;
-  width: 280px;
+  width: 120px;
   transform-origin: bottom left;
   transform: scale(0.18);
-  transition: transform 0.18s ease-out;
-}
-
-/* nähtamatu unlock layer */
-#unlock {
-  position: fixed;
-  inset: 0;
-  cursor: pointer;
-  z-index: 10;
+  transition: transform 0.15s ease-out;
 }
 </style>
 </head>
@@ -37,63 +38,73 @@ html, body {
 <body>
 
 <div id="unlock"></div>
-<img id="gif" src="hehe-dance.gif">
+<img id="gif" src="hehe-dance.gif" alt="dance">
 
 <script>
-let audio;
+/* =======================
+   KONFIG
+======================= */
+const BPM = 120;                  // muuda loo järgi
+const BEAT_MS = 60000 / BPM;
+
+/* =======================
+   STATE
+======================= */
+let audio = null;
 let beat = 0;
 let started = false;
+let startTime = 0;
 
-const BPM = 117;
-const BEAT_MS = 60000 / BPM;
+/* =======================
+   ELEMENTID
+======================= */
 const gif = document.getElementById("gif");
 const unlock = document.getElementById("unlock");
 
-// kasvav pulse
-const grow = [0.18, 0.28, 0.4, 0.6, 0.85, 1.15, 1.5];
+/* =======================
+   ABI
+======================= */
+function tension() {
+  const seconds = (Date.now() - startTime) / 1000;
+  return Math.min(1, seconds / 40); // pingelisus kasvab 40 sek
+}
 
-unlock.addEventListener("pointerdown", () => {
+/* =======================
+   START (AINUS LUBATUD)
+======================= */
+function start() {
   if (started) return;
   started = true;
 
-  unlock.remove(); // kaob jäädavalt
-
+  // heli luuakse JA käivitatakse kliki sees
   audio = new Audio("billijean.mp3");
-  audio.volume = 0;
-  audio.loop = true;
+  audio.volume = 1;
+  audio.play();
 
-  audio.play().then(() => {
-    // fade in
-    let v = 0;
-    const fade = setInterval(() => {
-      v += 0.03;
-      audio.volume = Math.min(v, 1);
-      if (v >= 1) clearInterval(fade);
-    }, 100);
-  });
+  startTime = Date.now();
+  unlock.remove();
 
-  startBeats();
-});
-
-function startBeats() {
   setInterval(() => {
     beat++;
 
-    // megazoom: iga 8. löök pärast 4
-    if (beat > 4 && (beat - 4) % 8 === 0) {
-      gif.style.transform = "scale(4.5)";
-      setTimeout(() => {
-        gif.style.transform = "scale(0.18)";
-      }, 260);
-      return;
+    const t = tension();
+    let scale = 1.2 + t * 1.5;
+
+    // megazoom iga 8. löök pärast 4
+    if (beat > 4 && beat % 8 === 0) {
+      scale = 3 + t * 4;
     }
 
-    const step = (beat - 1) % 8;
-    if (step < 7) {
-      gif.style.transform = `scale(${grow[step]})`;
-    }
+    gif.style.transform = `scale(${scale})`;
+
   }, BEAT_MS);
 }
+
+/* =======================
+   USER GESTURE (KOHUSTUSLIK)
+======================= */
+unlock.addEventListener("pointerdown", start);
+unlock.addEventListener("keydown", start);
 </script>
 
 </body>
