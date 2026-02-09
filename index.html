@@ -7,19 +7,17 @@
 <style>
 html, body {
   margin: 0;
-  padding: 0;
   width: 100%;
   height: 100%;
   background: black;
   overflow: hidden;
 }
 
-/* nähtamatu unlock kiht */
+/* nähtamatu audio unlock */
 #unlock {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  cursor: pointer;
 }
 
 /* gif */
@@ -29,8 +27,8 @@ html, body {
   left: 20px;
   width: 120px;
   transform-origin: bottom left;
-  transform: scale(0.18);
-  transition: transform 0.15s ease-out;
+  transform: scale(0.15);
+  transition: transform 0.08s linear;
 }
 </style>
 </head>
@@ -38,73 +36,85 @@ html, body {
 <body>
 
 <div id="unlock"></div>
-<img id="gif" src="hehe-dance.gif" alt="dance">
+<img id="gif" src="hehe-dance.gif">
 
 <script>
-/* =======================
-   KONFIG
-======================= */
-const BPM = 120;                  // muuda loo järgi
-const BEAT_MS = 60000 / BPM;
-
-/* =======================
+/* =====================
    STATE
-======================= */
-let audio = null;
-let beat = 0;
+===================== */
+let audio, ctx, analyser, data;
 let started = false;
-let startTime = 0;
+let energyHistory = [];
+let lastMega = 0;
 
-/* =======================
-   ELEMENTID
-======================= */
+/* =====================
+   ELEMENTS
+===================== */
 const gif = document.getElementById("gif");
 const unlock = document.getElementById("unlock");
 
-/* =======================
-   ABI
-======================= */
-function tension() {
-  const seconds = (Date.now() - startTime) / 1000;
-  return Math.min(1, seconds / 40); // pingelisus kasvab 40 sek
-}
-
-/* =======================
+/* =====================
    START (AINUS LUBATUD)
-======================= */
-function start() {
+===================== */
+unlock.addEventListener("pointerdown", () => {
   if (started) return;
   started = true;
-
-  // heli luuakse JA käivitatakse kliki sees
-  audio = new Audio("billijean.mp3");
-  audio.volume = 1;
-  audio.play();
-
-  startTime = Date.now();
   unlock.remove();
 
-  setInterval(() => {
-    beat++;
+  audio = new Audio("billijean.mp3");
+  audio.loop = true;
 
-    const t = tension();
-    let scale = 1.2 + t * 1.5;
+  ctx = new AudioContext();
+  analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
 
-    // megazoom iga 8. löök pärast 4
-    if (beat > 4 && beat % 8 === 0) {
-      scale = 3 + t * 4;
-    }
+  const source = ctx.createMediaElementSource(audio);
+  source.connect(analyser);
+  analyser.connect(ctx.destination);
 
-    gif.style.transform = `scale(${scale})`;
+  data = new Uint8Array(analyser.frequencyBinCount);
 
-  }, BEAT_MS);
+  audio.play();
+  requestAnimationFrame(loop);
+});
+
+/* =====================
+   ANALYSIS LOOP
+===================== */
+function loop() {
+  analyser.getByteFrequencyData(data);
+
+  // bass = alumised sagedused
+  let bass = 0;
+  for (let i = 0; i < 10; i++) bass += data[i];
+  bass /= 10;
+
+  // üldenergia
+  let energy = data.reduce((a,b) => a+b, 0) / data.length;
+
+  energyHistory.push(energy);
+  if (energyHistory.length > 60) energyHistory.shift();
+
+  const avgEnergy =
+    energyHistory.reduce((a,b) => a+b, 0) / energyHistory.length;
+
+  // pingelisus = bass + keskmine energia
+  const tension = Math.min(1, (bass + energy) / 300);
+
+  // normaalne pulse
+  let scale = 0.3 + tension * 2.2;
+
+  // 💥 MEGAZOOM kui bass spike
+  const now = performance.now();
+  if (bass > avgEnergy * 1.8 && now - lastMega > 1200) {
+    scale = 6;
+    lastMega = now;
+  }
+
+  gif.style.transform = `scale(${scale})`;
+
+  requestAnimationFrame(loop);
 }
-
-/* =======================
-   USER GESTURE (KOHUSTUSLIK)
-======================= */
-unlock.addEventListener("pointerdown", start);
-unlock.addEventListener("keydown", start);
 </script>
 
 </body>
